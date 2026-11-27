@@ -1,0 +1,8 @@
+[Unit]
+Description=Content Factory scheduled disk checks
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Persistent=true
+[Install]
+WantedBy=timers.target

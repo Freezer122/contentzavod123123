@@ -1,0 +1,21 @@
+[Unit]
+Description=Content Factory AdsPower headless client
+Requires=content-factory-api-guard.service
+After=content-factory-api-guard.service network-online.target
+Wants=network-online.target
+
+[Service]
+User=contentfactory
+Group=contentfactory
+WorkingDirectory=/home/contentfactory
+EnvironmentFile=/etc/content-factory-secrets/adspower.env
+ExecStart=/usr/bin/python3 /usr/local/libexec/content-factory-adspower-headless.py
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=30
+UMask=0077
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

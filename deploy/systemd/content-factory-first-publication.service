@@ -1,0 +1,26 @@
+[Unit]
+Description=Content Factory single explicitly approved post and CTA
+Requires=content-factory-adspower.service
+After=content-factory-adspower.service postgresql.service
+
+[Service]
+Type=oneshot
+User=contentfactory
+Group=contentfactory
+WorkingDirectory=/opt/content-factory/current
+EnvironmentFile=/etc/content-factory/worker.env
+EnvironmentFile=/etc/content-factory/approved-publication.env
+Environment=PUBLICATION_MODE=LIVE
+Environment=PUBLICATION_MANIFEST=/var/lib/content-factory/approvals/first-publication.json
+ExecStart=/opt/content-factory/runtime/node-v22.23.5-linux-x64/bin/node /opt/content-factory/current/dist-tools/scripts/publish-approved.js
+ExecStopPost=/opt/content-factory/runtime/node-v22.23.5-linux-x64/bin/node /opt/content-factory/current/dist-tools/scripts/disarm-publication.js
+Restart=no
+TimeoutStartSec=10min
+TimeoutStopSec=60
+RemainAfterExit=yes
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/content-factory

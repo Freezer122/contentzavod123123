@@ -1,0 +1,22 @@
+[Unit]
+Description=Content Factory AdsPower client
+Requires=content-factory-display.service content-factory-v14-api-guard.service
+Wants=content-factory-window-manager.service network-online.target
+After=content-factory-display.service content-factory-window-manager.service content-factory-v14-api-guard.service network-online.target
+
+[Service]
+User=contentfactory
+Group=contentfactory
+WorkingDirectory=/home/contentfactory
+Environment=DISPLAY=:88
+Environment=XAUTHORITY=/home/contentfactory/.Xauthority
+ExecStart=/usr/bin/dbus-run-session -- "/opt/AdsPower Global/adspower_global"
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=30
+UMask=0077
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

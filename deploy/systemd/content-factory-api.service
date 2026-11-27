@@ -1,0 +1,25 @@
+[Unit]
+Description=Content Factory private API
+Requires=content-factory-api-guard.service
+After=network-online.target postgresql.service redis-server.service content-factory-api-guard.service
+
+[Service]
+User=contentfactory
+Group=contentfactory
+WorkingDirectory=/opt/content-factory/current
+EnvironmentFile=/etc/content-factory/worker.env
+EnvironmentFile=/etc/content-factory-secrets/telegram.env
+EnvironmentFile=/etc/content-factory/api.env
+ExecStart=/opt/content-factory/runtime/node-v22.23.5-linux-x64/bin/node /opt/content-factory/current/dist/main.js
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=60
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/content-factory
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=Content Factory disk and artifact retention
+After=postgresql.service
+
+[Service]
+Type=oneshot
+User=contentfactory
+Group=contentfactory
+WorkingDirectory=/opt/content-factory/current
+EnvironmentFile=/etc/content-factory/worker.env
+ExecStart=/opt/content-factory/runtime/node-v22.23.5-linux-x64/bin/node /opt/content-factory/current/dist-tools/scripts/maintenance.js
+UMask=0077
+NoNewPrivileges=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/content-factory

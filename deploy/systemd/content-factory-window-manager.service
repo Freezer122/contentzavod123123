@@ -1,0 +1,17 @@
+[Unit]
+Description=Content Factory minimal window manager
+Requires=content-factory-display.service
+After=content-factory-display.service
+
+[Service]
+User=contentfactory
+Group=contentfactory
+Environment=DISPLAY=:88
+Environment=XAUTHORITY=/home/contentfactory/.Xauthority
+ExecStart=/usr/bin/fluxbox
+Restart=on-failure
+RestartSec=3
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

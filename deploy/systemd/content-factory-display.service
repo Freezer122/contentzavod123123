@@ -1,0 +1,14 @@
+[Unit]
+Description=Content Factory minimal X display
+Before=content-factory-adspower.service
+
+[Service]
+User=contentfactory
+Group=contentfactory
+ExecStart=/usr/bin/Xvfb :88 -screen 0 1440x1000x24 -nolisten tcp -auth /home/contentfactory/.Xauthority
+Restart=on-failure
+RestartSec=3
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

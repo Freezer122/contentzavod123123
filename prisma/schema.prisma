@@ -1,0 +1,558 @@
+generator client {
+  provider = "prisma-client"
+  output = "../src/generated/prisma"
+}
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  telegramId String @unique
+  timezone String
+  @@map("users")
+}
+
+model BrowserProfile {
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  provider String
+  externalId String
+  name String
+  @@unique([provider, externalId])
+  account_profileId Account? @relation("AccountprofileId")
+  @@map("browser_profiles")
+}
+
+model Style {
+  ownerAccountId String? @unique
+  owner Account? @relation("OwnedStyle",fields:[ownerAccountId],references:[id],onDelete:Restrict)
+  feedback GenerationFeedback[]
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  name String
+  instruction String
+  maxLength Int
+  maxParagraphs Int
+  punctuation String
+  emoji Boolean
+  slang Boolean
+  profanity Boolean
+  forbidden String[]
+  opening String
+  ending String
+  extra String
+  styleExample_styleId StyleExample[] @relation("StyleExamplestyleId")
+  account_styleId Account[] @relation("AccountstyleId")
+  generated_styleId Generated[] @relation("GeneratedstyleId")
+  @@map("account_style_profiles")
+}
+
+model StyleExample {
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  styleId String
+  text String
+  style Style @relation("StyleExamplestyleId", fields: [styleId], references: [id], onDelete: Restrict)
+  @@index([styleId])
+  @@map("style_examples")
+}
+
+model Account {
+  templateId String?
+  contentTemplate ContentTemplate? @relation("PinnedTemplate",fields:[templateId],references:[id],onDelete:Restrict)
+  ownedStyle Style? @relation("OwnedStyle")
+  feedback GenerationFeedback[]
+  ownedCta Cta? @relation("OwnedCta")
+  cohorts MemberCohort[]
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  username String @unique
+  profileUrl String
+  name String
+  profileId String @unique
+  styleId String
+  status String @default("PAUSED")
+  autoApprove Boolean @default(false)
+  followers Int?
+  lastPublishedAt DateTime? @db.Timestamptz(3)
+  ctaId String?
+  insightsUserId String?
+  @@index([status])
+  profile BrowserProfile @relation("AccountprofileId", fields: [profileId], references: [id], onDelete: Restrict)
+  style Style @relation("AccountstyleId", fields: [styleId], references: [id], onDelete: Restrict)
+  @@index([styleId])
+  cta Cta? @relation("AccountctaId", fields: [ctaId], references: [id], onDelete: Restrict)
+  @@index([ctaId])
+  generated_accountId Generated[] @relation("GeneratedaccountId")
+  publishJob_accountId PublishJob[] @relation("PublishJobaccountId")
+  post_accountId Post[] @relation("PostaccountId")
+  accountMetric_accountId AccountMetric[] @relation("AccountMetricaccountId")
+  trackingLink_accountId TrackingLink[] @relation("TrackingLinkaccountId")
+  invite_accountId Invite[] @relation("InviteaccountId")
+  conversion_accountId Conversion[] @relation("ConversionaccountId")
+  aiRequest_accountId AiRequest[] @relation("AiRequestaccountId")
+  @@map("threads_accounts")
+}
+
+model Source {
+  topic String @default("Не указана")
+  format String @default("Не указан")
+  hook String @default("Не указан")
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  url String? @unique
+  fingerprint String @unique
+  text String
+  author String?
+  rights String @default("REVIEW")
+  generated_sourceId Generated[] @relation("GeneratedsourceId")
+  @@map("source_contents")
+}
+
+model Generated {
+  templateId String?
+  templateSnapshot String?
+  styleSnapshot String?
+  promptVersion String?
+  model String?
+  aiRequestId String?
+  inputTokens Int?
+  outputTokens Int?
+  tokenScope String @default("UNKNOWN")
+  contentTemplate ContentTemplate? @relation(fields:[templateId],references:[id],onDelete:Restrict)
+  aiRequest AiRequest? @relation(fields:[aiRequestId],references:[id],onDelete:Restrict)
+  feedback GenerationFeedback[]
+  cacheKey String?
+  validationErrors String[] @default([])
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  sourceId String
+  styleId String
+  accountId String
+  text String
+  version Int
+  valid Boolean
+  approved Boolean @default(false)
+  @@unique([sourceId, accountId, version])
+  source Source @relation("GeneratedsourceId", fields: [sourceId], references: [id], onDelete: Restrict)
+  @@index([sourceId])
+  style Style @relation("GeneratedstyleId", fields: [styleId], references: [id], onDelete: Restrict)
+  @@index([styleId])
+  account Account @relation("GeneratedaccountId", fields: [accountId], references: [id], onDelete: Restrict)
+  @@index([accountId])
+  publishJob_generatedId PublishJob[] @relation("PublishJobgeneratedId")
+  post_generatedId Post[] @relation("PostgeneratedId")
+  @@map("generated_contents")
+}
+
+model Batch {
+  mode String @default("ACCOUNT_SPECIFIC")
+  adaptation String @default("PER_ACCOUNT")
+  cycleSeconds Int @default(7200)
+  intervalSeconds Float @default(0)
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  name String
+  approval String
+  publishJob_batchId PublishJob[] @relation("PublishJobbatchId")
+  @@map("publishing_batches")
+}
+
+model PublishJob {
+  postSubmitAt DateTime? @map("post_submit_at") @db.Timestamptz(3)
+  postConfirmedAt DateTime? @map("post_confirmed_at") @db.Timestamptz(3)
+  ctaScheduledAt DateTime? @map("cta_scheduled_at") @db.Timestamptz(3)
+  ctaSubmitAt DateTime? @map("cta_submit_at") @db.Timestamptz(3)
+  ctaConfirmedAt DateTime? @map("cta_confirmed_at") @db.Timestamptz(3)
+  ctaDelayNotifiedAt DateTime? @map("cta_delay_notified_at") @db.Timestamptz(3)
+  ctaMediaPath String?
+  ctaMediaSha256 String?
+  ctaCapturedAt DateTime? @db.Timestamptz(3)
+  ctaEnabled Boolean?
+  plannedAt DateTime? @db.Timestamptz(3)
+  sequence Int @default(0)
+  delayMs Float @default(0)
+  delayReason String?
+  lastAttemptAt DateTime? @db.Timestamptz(3)
+  ctaUrl String?
+  ctaVersion Int @default(0)
+  ctaUpdatedAt DateTime? @db.Timestamptz(3)
+  commentNotBefore DateTime? @db.Timestamptz(3)
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  batchId String
+  accountId String
+  generatedId String
+  scheduledAt DateTime @db.Timestamptz(3)
+  status String
+  postStatus String
+  commentStatus String
+  ctaText String?
+  attempts Int @default(0)
+  lastError String?
+  startedAt DateTime? @db.Timestamptz(3)
+  updatedAt DateTime @db.Timestamptz(3)
+  revision Int @default(0)
+  @@unique([batchId, accountId])
+  @@index([status, scheduledAt])
+  batch Batch @relation("PublishJobbatchId", fields: [batchId], references: [id], onDelete: Restrict)
+  @@index([batchId])
+  account Account @relation("PublishJobaccountId", fields: [accountId], references: [id], onDelete: Restrict)
+  @@index([accountId])
+  generated Generated @relation("PublishJobgeneratedId", fields: [generatedId], references: [id], onDelete: Restrict)
+  @@index([generatedId])
+  post_jobId Post? @relation("PostjobId")
+  @@map("publishing_jobs")
+}
+
+model Post {
+  performance ContentPerformance?
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  jobId String @unique
+  accountId String
+  generatedId String
+  url String @unique
+  externalId String?
+  publishedAt DateTime @db.Timestamptz(3)
+  @@index([accountId, publishedAt])
+  job PublishJob @relation("PostjobId", fields: [jobId], references: [id], onDelete: Restrict)
+  account Account @relation("PostaccountId", fields: [accountId], references: [id], onDelete: Restrict)
+  @@index([accountId])
+  generated Generated @relation("PostgeneratedId", fields: [generatedId], references: [id], onDelete: Restrict)
+  @@index([generatedId])
+  comment_postId Comment? @relation("CommentpostId")
+  postMetric_postId PostMetric[] @relation("PostMetricpostId")
+  trackingLink_postId TrackingLink[] @relation("TrackingLinkpostId")
+  conversion_postId Conversion[] @relation("ConversionpostId")
+  @@map("published_posts")
+}
+
+model Comment {
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  postId String @unique
+  text String
+  url String?
+  status String
+  post Post @relation("CommentpostId", fields: [postId], references: [id], onDelete: Restrict)
+  @@map("published_comments")
+}
+
+model PostMetric {
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  postId String
+  measuredAt DateTime @db.Timestamptz(3)
+  targetHours Int?
+  source String
+  status String
+  views Int?
+  likes Int?
+  replies Int?
+  reposts Int?
+  quotes Int?
+  @@unique([postId, targetHours])
+  @@index([postId, measuredAt])
+  post Post @relation("PostMetricpostId", fields: [postId], references: [id], onDelete: Restrict)
+  @@index([postId])
+  @@map("post_metrics_snapshots")
+}
+
+model AccountMetric {
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  accountId String
+  measuredAt DateTime @db.Timestamptz(3)
+  followers Int?
+  source String
+  @@index([accountId, measuredAt])
+  account Account @relation("AccountMetricaccountId", fields: [accountId], references: [id], onDelete: Restrict)
+  @@index([accountId])
+  @@map("account_metrics_snapshots")
+}
+
+model Cta {
+  mediaPath String?
+  mediaSha256 String?
+  accountId String? @unique
+  url String @default("")
+  updatedAt DateTime @default(now()) @db.Timestamptz(3)
+  version Int @default(1)
+  owner Account? @relation("OwnedCta",fields:[accountId],references:[id],onDelete:Restrict)
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  name String
+  text String
+  enabled Boolean
+  account_ctaId Account[] @relation("AccountctaId")
+  trackingLink_ctaId TrackingLink[] @relation("TrackingLinkctaId")
+  @@map("cta_templates")
+}
+
+model TrackingLink {
+  permanent Boolean @default(false)
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  code String @unique
+  accountId String
+  postId String?
+  ctaId String?
+  destination String
+  account Account @relation("TrackingLinkaccountId", fields: [accountId], references: [id], onDelete: Restrict)
+  @@index([accountId])
+  post Post? @relation("TrackingLinkpostId", fields: [postId], references: [id], onDelete: Restrict)
+  @@index([postId])
+  cta Cta? @relation("TrackingLinkctaId", fields: [ctaId], references: [id], onDelete: Restrict)
+  @@index([ctaId])
+  click_linkId Click[] @relation("ClicklinkId")
+  invite_linkId Invite[] @relation("InvitelinkId")
+  conversion_linkId Conversion[] @relation("ConversionlinkId")
+  @@map("tracking_links")
+}
+
+model Click {
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  linkId String
+  visitorHash String
+  @@index([linkId, createdAt])
+  @@index([visitorHash, createdAt])
+  link TrackingLink @relation("ClicklinkId", fields: [linkId], references: [id], onDelete: Restrict)
+  @@index([linkId])
+  @@map("tracking_clicks")
+}
+
+model Invite {
+  active Boolean @default(false)
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  accountId String
+  linkId String?
+  inviteUrl String @unique
+  channelId String
+  account Account @relation("InviteaccountId", fields: [accountId], references: [id], onDelete: Restrict)
+  @@index([accountId])
+  link TrackingLink? @relation("InvitelinkId", fields: [linkId], references: [id], onDelete: Restrict)
+  @@index([linkId])
+  membership_inviteId Membership[] @relation("MembershipinviteId")
+  @@map("telegram_invite_links")
+}
+
+model Membership {
+ origin String @default("UPDATE")
+  cohorts MemberCohort[]
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  eventKey String @unique
+  channelId String
+  userHash String
+  kind String
+  inviteId String?
+  occurredAt DateTime @db.Timestamptz(3)
+  @@index([channelId, occurredAt])
+  invite Invite? @relation("MembershipinviteId", fields: [inviteId], references: [id], onDelete: Restrict)
+  @@index([inviteId])
+  conversion_eventId Conversion? @relation("ConversioneventId")
+  @@map("telegram_membership_events")
+}
+
+model Conversion {
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  eventId String @unique
+  linkId String
+  accountId String
+  postId String?
+  event Membership @relation("ConversioneventId", fields: [eventId], references: [id], onDelete: Restrict)
+  link TrackingLink @relation("ConversionlinkId", fields: [linkId], references: [id], onDelete: Restrict)
+  @@index([linkId])
+  account Account @relation("ConversionaccountId", fields: [accountId], references: [id], onDelete: Restrict)
+  @@index([accountId])
+  post Post? @relation("ConversionpostId", fields: [postId], references: [id], onDelete: Restrict)
+  @@index([postId])
+  @@map("attributed_conversions")
+}
+
+model AiRequest {
+  providerResponseId String? @unique
+  cachedInputTokens Int @default(0)
+  cacheWriteTokens Int @default(0)
+  reasoningTokens Int @default(0)
+  reasoningEffort String?
+  usageJson String?
+  purpose String @default("POST")
+  generated Generated[]
+  feedback GenerationFeedback[]
+  accountIds String[] @default([])
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  accountId String
+  model String
+  inputTokens Int
+  outputTokens Int
+  costUsd Float
+  status String
+  reservedUsd Float
+  @@index([createdAt, status])
+  account Account @relation("AiRequestaccountId", fields: [accountId], references: [id], onDelete: Restrict)
+  @@index([accountId])
+  @@map("ai_requests")
+}
+
+model SystemEvent {
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  level String
+  code String
+  message String
+  @@index([createdAt, level])
+  @@map("system_events")
+}
+
+model Audit {
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  actor String
+  action String
+  entityId String
+  detail String
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Lease {
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  token String
+  expiresAt DateTime @db.Timestamptz(3)
+  @@map("profile_leases")
+}
+
+model Setting {
+  id String @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  value String
+  @@map("system_settings")
+}
+
+model AdaptationCache {
+  aiRequestId String?
+  inputTokens Int?
+  outputTokens Int?
+  tokenScope String @default("UNKNOWN")
+ id String @id
+ createdAt DateTime @default(now()) @db.Timestamptz(3)
+ text String
+ model String
+ instructionVersion String
+ styleFingerprint String
+ valid Boolean
+ @@map("adaptation_cache")
+}
+model ContentPerformance {
+  templateId String?
+  templateSnapshot String?
+  contentTemplate ContentTemplate? @relation(fields:[templateId],references:[id],onDelete:Restrict)
+ id String @id
+ createdAt DateTime @default(now()) @db.Timestamptz(3)
+ postId String @unique
+ sourceText String
+ finalText String
+ topic String
+ format String
+ hook String
+ textLength Int
+ hasQuestion Boolean
+ post Post @relation(fields:[postId],references:[id],onDelete:Restrict)
+ @@index([topic,format])
+ @@map("content_performance")
+}
+model MemberIdentity {
+ id String @id
+ createdAt DateTime @default(now()) @db.Timestamptz(3)
+ channelId String
+ userHash String
+ encryptedUserId String
+ @@unique([channelId,userHash])
+ @@map("telegram_member_identities")
+}
+model MemberCohort {
+ exitConfirmed Boolean @default(false)
+ id String @id
+ createdAt DateTime @default(now()) @db.Timestamptz(3)
+ joinEventId String
+ channelId String
+ userHash String
+ accountId String?
+ joinedAt DateTime @db.Timestamptz(3)
+ leftAt DateTime? @db.Timestamptz(3)
+ d7Member Boolean?
+ d7MeasuredAt DateTime? @db.Timestamptz(3)
+ d7Status String @default("PENDING")
+ d30Member Boolean?
+ d30MeasuredAt DateTime? @db.Timestamptz(3)
+ d30Status String @default("PENDING")
+ joinEvent Membership @relation(fields:[joinEventId],references:[id],onDelete:Restrict)
+ account Account? @relation(fields:[accountId],references:[id],onDelete:Restrict)
+ @@unique([joinEventId])
+ @@index([channelId,userHash,joinedAt])
+ @@index([accountId,joinedAt])
+ @@map("telegram_member_cohorts")
+}
+
+model ContentTemplate {
+ id String @id
+ createdAt DateTime @default(now()) @db.Timestamptz(3)
+ updatedAt DateTime @default(now()) @db.Timestamptz(3)
+ name String
+ instruction String
+ version Int @default(1)
+ enabled Boolean @default(true)
+ examples TemplateExample[]
+ accounts Account[] @relation("PinnedTemplate")
+ generated Generated[]
+ performance ContentPerformance[]
+ feedback GenerationFeedback[]
+ @@map("content_templates")
+}
+model TemplateExample {
+ id String @id
+ createdAt DateTime @default(now()) @db.Timestamptz(3)
+ templateId String
+ text String
+ contentTemplate ContentTemplate @relation(fields:[templateId],references:[id],onDelete:Restrict)
+ @@index([templateId])
+ @@map("content_template_examples")
+}
+model GenerationFeedback {
+ id String @id
+ createdAt DateTime @default(now()) @db.Timestamptz(3)
+ ratedAt DateTime @db.Timestamptz(3)
+ generatedId String
+ userId String
+ rating String
+ sourceText String
+ finalText String
+ accountId String
+ styleId String
+ styleSnapshot String?
+ templateId String?
+ templateSnapshot String?
+ promptVersion String?
+ model String?
+ aiRequestId String?
+ inputTokens Int?
+ outputTokens Int?
+ tokenScope String
+ generated Generated @relation(fields:[generatedId],references:[id],onDelete:Restrict)
+ account Account @relation(fields:[accountId],references:[id],onDelete:Restrict)
+ style Style @relation(fields:[styleId],references:[id],onDelete:Restrict)
+ contentTemplate ContentTemplate? @relation(fields:[templateId],references:[id],onDelete:Restrict)
+ aiRequest AiRequest? @relation(fields:[aiRequestId],references:[id],onDelete:Restrict)
+ @@unique([generatedId,userId])
+ @@index([rating,ratedAt])
+ @@map("generation_feedback")
+}

@@ -1,0 +1,11 @@
+[Unit]
+Description=Content Factory private control ports
+Before=content-factory-adspower.service content-factory-api.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/libexec/content-factory-api-guard.py
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

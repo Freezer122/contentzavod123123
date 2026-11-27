@@ -1,0 +1,8 @@
+import json,subprocess,urllib.parse,datetime
+from pathlib import Path
+e=dict(line.split('=',1) for line in Path('/etc/content-factory/worker.env').read_text().splitlines() if '=' in line and not line.startswith('#'));db=urllib.parse.urlsplit(e['DATABASE_URL']).path.lstrip('/')
+def sql(q):return subprocess.check_output(['/usr/sbin/runuser','-u','postgres','--','psql','-d',db,'-At','-c',q],text=True,cwd='/tmp').strip()
+def rows(q):return json.loads(sql("SELECT coalesce(json_agg(x),'[]') FROM ("+q+") x"))
+x={'at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'settings':rows("SELECT id,value::jsonb AS doc FROM system_settings WHERE id LIKE 'autopilot-%' OR id IN ('factoryPaused','automationPaused','emergencyStop','engagement-config-threads02','engagement-search-threads02-2026-11-21')"),'audit':rows("SELECT actor,action,\"entityId\",detail,\"createdAt\" FROM audit_logs WHERE action LIKE 'AUTOPILOT%' OR (action='TELEGRAM_ACTION' AND detail LIKE 'ap:%') ORDER BY \"createdAt\" DESC LIMIT 100"),'jobs':rows('SELECT * FROM publishing_jobs ORDER BY "createdAt" DESC'),'generation':rows("SELECT id,value::jsonb AS doc FROM system_settings WHERE id LIKE 'generation-task-%' ORDER BY \"createdAt\" DESC LIMIT 20"),'redisKeys':subprocess.check_output(['redis-cli','-n','15','--scan','--pattern','bull:*'],text=True).splitlines(),'events':rows("SELECT level,code,message,\"createdAt\" FROM system_events WHERE \"createdAt\">now()-interval '8 hours' ORDER BY \"createdAt\" DESC LIMIT 30")}
+p=Path('/var/lib/content-factory/reports/KEEP-v117-before.json');p.write_text(json.dumps(x,ensure_ascii=False,indent=2));p.chmod(0o600)
+print(json.dumps(x,ensure_ascii=False))

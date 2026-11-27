@@ -1,0 +1,18 @@
+{
+  "baseUrl": "https://www.threads.com",
+  "loggedIn": "a[href='/activity']",
+  "identity": "a[href='/@{username}']:has(svg[title='Profil'], svg[title='Profile'], svg[title='Профиль'])",
+  "challenge": "iframe[src*='captcha'], form[action*='challenge'], input[name='verificationCode']",
+  "restricted": "text=/Your account has been suspended|Аккаунт заблокирован|account is restricted/i",
+  "create": "text=/^(Was gibt['’]s Neues\\?|What['’]s new\\?|Что нового\\?)$/",
+  "dialog": "[role='dialog']",
+  "editor": "[contenteditable='true'][role='textbox']",
+  "submit": "role=button[name=/^(Post|Posten|Опубликовать)$/]",
+  "ownPost": "div[data-pressable-container='true']",
+  "postLink": "a[href*='/post/']:not([href*='/media'])",
+  "reply": "[role='button']:has(svg[title='Antworten']), [role='button']:has(svg[title='Reply']), [role='button'][aria-label='Reply'], [role='button'][aria-label='Ответить']",
+  "replySubmit": "role=button[name=/^(Reply|Antworten|Posten|Ответить)$/]",
+  "mediaInput": "input[type='file'][accept*='image/']",
+  "mediaPreview": "img",
+  "comment": "div[data-pressable-container='true']"
+}
